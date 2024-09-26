@@ -6,7 +6,7 @@ import { resolve } from "path";
 const pathSrc = resolve(__dirname, "src");
 
 export default defineConfig({
-  base:"Q_markdown",
+  base:"/Q_markdown/",
   resolve: {
     alias: {
       "@": pathSrc,
