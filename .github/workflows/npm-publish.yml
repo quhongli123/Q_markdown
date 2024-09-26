@@ -1,33 +1,52 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://help.github.com/actions/language-and-framework-guides/publishing-nodejs-packages
-
-name: Node.js Package
+# action名称
+name: Publish and Release
 
 on:
-  release:
-    types: [created]
-
+  push:
+    branches: [main]
+# 任务
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: 18
-      - run: pnpm ci
-
   publish-npm:
-    needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: 检查master分支
+        uses: actions/checkout@main
+
+      - name: 设置Node.js
+        uses: actions/setup-node@main
         with:
           node-version: 18
-          registry-url: https://registry.npmjs.org/
-      - run: pnpm ci
-      - run: npm run install
-      - run: pnpm publish
+          registry-url: https://registry.npmjs.org/ # 如果不配置将影响publish
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 构建packages
+        run: npm run lib
+
+      - name: 发布NPM包
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        run: |
+          npm publish
+      - name: publish 成功通知
+        run: echo npm 推送成功，请访问 https://jackysoft.github.io/rocket-render-doc
+
+      - name: 读取当前版本号
+        id: version
+        uses: ashley-taylor/read-json-property-action@v1.0
+        with:
+          path: ./package.json
+          property: version
+
+      - name: 创建GitHub Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{steps.version.outputs.value}}
+          release_name: v${{steps.version.outputs.value}}
+          draft: false
+          prerelease: false
+
