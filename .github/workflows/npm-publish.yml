@@ -1,52 +1,51 @@
-# action名称
-name: Publish and Release
-
+# 将静态内容部署到 GitHub Pages 的简易工作流程
+name: Deploy static content to Pages
+ 
 on:
+  # 仅在推送到默认分支时运行。
   push:
-    branches: [main]
-# 任务
+    branches: ['main']
+ 
+  # 这个选项可以使你手动在 Action tab 页面触发工作流
+  workflow_dispatch:
+ 
+# 设置 GITHUB_TOKEN 的权限，以允许部署到 GitHub Pages。
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+ 
+# 允许一个并发的部署
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+ 
 jobs:
-  publish-npm:
+  # 单次部署的工作描述
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: 检查master分支
-        uses: actions/checkout@main
-
-      - name: 设置Node.js
-        uses: actions/setup-node@main
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
-          registry-url: https://registry.npmjs.org/ # 如果不配置将影响publish
-
-      - name: 安装依赖
-        run: npm install
-
-      - name: 构建packages
-        run: npm run lib
-
-      - name: 发布NPM包
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: |
-          npm publish
-      - name: publish 成功通知
-        run: echo npm 推送成功，请访问 https://jackysoft.github.io/rocket-render-doc
-
-      - name: 读取当前版本号
-        id: version
-        uses: ashley-taylor/read-json-property-action@v1.0
+          node-version: 19
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: ./package.json
-          property: version
-
-      - name: 创建GitHub Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{steps.version.outputs.value}}
-          release_name: v${{steps.version.outputs.value}}
-          draft: false
-          prerelease: false
-
+          # Upload dist folder
+          path: './dist'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
