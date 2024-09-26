@@ -100,7 +100,7 @@
   const editor = ref(null);
   
   // 使用md来创建响应式的数据
-  const textarea = ref("");
+  const textarea = ref(``);
   const url = ref("");
   const onSave = (e, value) => {
     if (textarea.value) {
@@ -163,10 +163,6 @@
     }
   }
   
-  .container {
-    width: 100%;
-    background: red;
-  }
   
   /* Basic editor styles */
   .tiptap {
@@ -266,7 +262,7 @@
       overflow: hidden;
       table-layout: fixed;
       border-collapse: collapse;
-  
+      cursor: pointer;
       td,
       th {
         position: relative;
